@@ -1,0 +1,185 @@
+*********************** MapObject : - ********************************************
+
+eg :- 1
+payload - 
+
+{
+    "name": "Mariano",
+    "lastname": "de Achaval",
+    "age": "37",
+    "gender": "male"
+  }
+ 
+DataWeave - 
+ 
+%dw 2.0
+output application/json
+---
+{
+"withoutDollar" : payload mapObject (value, key, index ) -> {
+    (if((key) ~= 'age') "AGE" : value
+     else (key) : value)
+},
+"WithDollar" : payload mapObject  {
+    (if(($$) ~= 'age') "AGE" : $
+     else ($$) : $)
+}
+
+}
+
+//value is $, Key is $$, index is $$$
+
+Output - 
+
+{
+  "withoutDollar": {
+    "name": "Mariano",
+    "lastname": "de Achaval",
+    "AGE": "37",
+    "gender": "male"
+  },
+  "WithDollar": {
+    "name": "Mariano",
+    "lastname": "de Achaval",
+    "AGE": "37",
+    "gender": "male"
+  }
+}
+
+************************** Function **********************************************
+
+
+Dataweave - 
+
+%dw 2.0
+output application/csv
+
+//fun verifyAge(age : Number) = if(age>40) "not eligible" else "eligible"
+fun verifyAge(age) = if(age>40) "not eligible" else "eligible"
+
+---
+
+  {
+    name: "Mariano",
+    lastname: "de Achaval",
+    age: verifyAge(37),
+    gender: "male"
+  }
+  
+output - 
+name,lastname,age,gender
+Mariano,de Achaval,eligible,male
+
+************************Using FilterObject with MapObject********************************
+
+%dw 2.0
+output application/json
+fun doublePrice(price) = price * 2
+
+var inputObject = {
+    "product1": {
+        "name": "Widget",
+        "quantity": 5,
+        "price": 10
+    },
+    "product2": {
+        "name": "Gadget",
+        "quantity": 0,
+        "price": 15
+    },
+    "product3": {
+        "name": "Doodad",
+        "quantity": 3,
+        "price": 8
+    }
+}
+
+var filteredAndMappedObject = inputObject 
+    // Filter out products with quantity > 0
+    filterObject((value, key) -> value.quantity > 0)
+    // Double the price of the remaining products
+    mapObject ((value, key) -> 
+        (key): {
+            "name": value.name,
+            "quantity": value.quantity,
+            "price": doublePrice(value.price)
+        }
+    )
+
+---
+filteredAndMappedObject
+
+
+Output --
+
+{
+  "product1": {
+    "name": "Widget",
+    "quantity": 5,
+    "price": 20
+  },
+  "product3": {
+    "name": "Doodad",
+    "quantity": 3,
+    "price": 16
+  }
+}
+
+*********************** Find Prime Number Using DataWeave **************************
+
+%dw 2.0
+output application/json  
+---
+if (((2 to payload.number - 1) map (payload.number mod $)) contains (0) == true)
+  payload.number ++ " : is prime"
+else
+  payload.number ++ " : is not prime"
+
+*********************** Using Filter, Map, FilterObject, MapObject Together ***************************************
+
+DataWeave--
+
+%dw 2.0
+output application/json
+
+var inputObject = [
+    {
+        "name": "Widget",
+        "quantity": 5,
+        "price": 10
+    },
+    {
+        "name": "Gadget",
+        "quantity": 0,
+        "price": 15
+    },
+    {
+        "name": "Doodad",
+        "quantity": 3,
+        "price": 8
+    }
+]
+---
+inputObject filter($.price >= 10) map (item, index)-> {
+    (item filterObject((value1, key1, index1)-> ((key1) startsWith  ('q') ) or ((key1) startsWith  ('p') ) ) 
+              mapObject ((value2, key2, index2) -> 
+                           (if(((key2) ~= 'quantity')) "Stock" : value2
+                               else (key2) : value2))
+     )
+}
+
+
+--------Output
+
+[
+  {
+    "Stock": 5,
+    "price": 10
+  },
+  {
+    "Stock": 0,
+    "price": 15
+  }
+]
+
+
