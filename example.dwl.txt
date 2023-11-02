@@ -1,3 +1,4 @@
+
 *********************** MapObject : - ********************************************
 
 eg :- 1
@@ -181,5 +182,111 @@ inputObject filter($.price >= 10) map (item, index)-> {
     "price": 15
   }
 ]
+
+
+***************Example of upper, lower, now(), replace with, substring, distinctBy, splitBy, splitAt, splitWhere, partition *******************
+
+DataWeave---
+
+%dw 2.0
+import * from dw::core::Strings
+import * from dw::core::Arrays
+output application/json
+
+var inputString = "Hello, World!"
+
+
+var inputString2 = ["Hello","World!"]
+
+var numbers = [2, 3, 5, 3, 8, 9, 4]
+
+
+---
+{
+  "upperCase": upper(inputString),
+  "lowerCase": lower(inputString),
+   "CurrentTime" : now(),
+   "year" : now().year,
+   "CurrentTimeInMilliSeconds" : now().milliseconds,
+
+   "replacedString": inputString replace("World") with ("DataWeave"),
+
+   "substringExample":  substring(inputString, 1, 5),
+    
+    "distinctNumbers": numbers distinctBy $,
+    //"distinctNumbers": numbers distinctBy ((item) -> item),
+
+   "splitByComma": splitBy(inputString, ","),
+   "splitAtExample": inputString2 splitAt(1),
+   "splitWhereExample" : numbers splitWhere ((item) -> item >  5),
+       //this splits at the point where condition is met for the first time
+       "Partition" : numbers partition((item) -> isEven(item) )
+
+}
+
+
+-----Output 
+{
+  "upperCase": "HELLO, WORLD!",
+  "lowerCase": "hello, world!",
+  "CurrentTime": "2023-09-28T09:10:30.27772Z",
+  "year": 2023,
+  "CurrentTimeInMilliSeconds": 277,
+  "replacedString": "Hello, DataWeave!",
+  "substringExample": "ello",
+  "distinctNumbers": [
+    2,
+    3,
+    5,
+    8,
+    9,
+    4
+  ],
+  "splitByComma": [
+    "Hello",
+    " World!"
+  ],
+  "splitAtExample": {
+    "l": [
+      "Hello"
+    ],
+    "r": [
+      "World!"
+    ]
+  },
+  "splitWhereExample": {
+    "l": [
+      2,
+      3,
+      5,
+      3
+    ],
+    "r": [
+      8,
+      9,
+      4
+    ]
+  },
+  "Partition": {
+    "success": [
+      2,
+      8,
+      4
+    ],
+    "failure": [
+      3,
+      5,
+      3,
+      9
+    ]
+  }
+}
+
+*********************** Get payload out of scatter gather ****************************************
+
+pluck(payload, (value, key, index) -> {
+      "payload" : value.payload
+}
+)
 
 
