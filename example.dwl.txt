@@ -1,3 +1,10 @@
+*********************** Map Syntax ***********************************************
+
+%dw 2.0
+output application/json
+---
+["jose", "pedro", "mateo"] filter ($ != 'jose') map ((value, index) -> { (index) : value})
+
 
 *********************** MapObject : - ********************************************
 
@@ -288,5 +295,255 @@ pluck(payload, (value, key, index) -> {
       "payload" : value.payload
 }
 )
+
+*********************** sum all the number in an array ********************************************
+
+[1,2,3,4,5,6,76,8,65] reduce($+$$) or payload reduce($+$$) or sum(payload)
+
+
+*********************** add an id and increment it by one****************************************
+
+["jose", "pedro", "mateo"]  map (()-> 
+{
+    'id' : $$ + 100 ,
+    'name' : $
+}
+)
+
+
+********************* Filter odd even ******************************************
+
+[0,1,2,3,4,5,6,7,8,9]
+
+
+
+***************** interchange key and value ************************************
+
+input payload - 
+
+[
+ {
+ "message1":"Hello World"
+ },
+ {
+ "message2":"Hello Shubham"
+ }
+]
+
+dataweave script - Inside medium bracket map function expects key value pair, so we cant directly use teh mapobject. We can either keep it
+outside the medium bracket or put the whole mapobject inside a small bracket
+
+option 1 :- inside medium bracket and inside small bracket
+
+payload map ((item, value) -> {
+   ( item mapObject(v,k,i) -> {
+     (v):k
+    })
+})
+
+option 2 :- outside medium bracket in map
+
+payload map ((item, value) -> item mapObject(v,k,i) -> {
+    (v) : k
+}
+)
+
+
+************************** reverse the string of sentence *******************************
+
+input payload - 
+
+{
+ "Reverse": "Dataweave 2.0 is Cool"
+}
+
+
+dataweave script -
+
+(payload.Reverse splitBy " ") [-1 to 0] joinBy " " 
+
+
+***************************Print Last x characters of a number or String **********************
+
+need to import last or first from String module
+
+inoput payload -
+
+[
+ {
+ "num":"000147"
+ },
+ {
+ "num":"100297"
+ },
+]
+
+dataweave script -
+
+import last from dw::core::Strings
+ - -
+payload map(v,k)-> (num: v.num last 3)
+
+
+
+************************** count alphabets in the strings **********************************
+
+input payload -
+
+{
+ "string":"12shubham245fc"
+}
+
+dataweave script - countCharactersBy counts the characters based on string and condition, the condition here is isAlpha($) which check if the 
+character is an alphabet
+
+import countCharactersBy, isAlpha from dw::core::Strings
+ - -
+payload.string countCharactersBy isAlpha($)
+
+
+
+********************* Find Number of Object or Key-Value Pairs in an Array********************
+
+input paylod - 
+
+[{
+ "k1":"v1"
+},
+{
+ "k2":"v2"
+}
+]
+
+dataweave script - 
+
+sizeOf(payload)
+
+
+********************* Generate Random Numbers********************
+range is taken in small brackets like (1 to payload[0])
+
+input paylod - 
+[10]
+
+dataweave script - 
+
+(1 to payload[0]) map randomInt(100)
+
+output - random numbers
+
+[89,26,21,77,80,31,24,13,54,55]
+
+
+******************** Splt object into key value pairs in an array **************
+
+
+input paylod - 
+
+["a:b","c:d"]
+
+dataweave script - 
+
+payload map (() -> (($ splitBy ":")[0]) : ($ splitBy ":")[1])
+
+ouput - 
+
+[
+  {
+    "a": "b"
+  },
+  {
+    "c": "d"
+  }
+]
+
+*************************** Output the Following Pattern****************
+
+input paylod - 
+
+{
+ "number": "1034101910291333"
+}
+
+expected output -
+
+[
+ "1034",
+ "10341019",
+ "103410191029",
+ "1034101910291333"
+]
+
+dataweave script - 
+
+%dw 2.0
+output application/json
+
+var l = sizeOf(payload.number)/4
+---
+
+((0 to l) map payload.number[0 to 4*($+1) -1]) filter $ != null
+
+
+
+******************* Filter based on field value and form a String **********************
+
+
+input payload - 
+
+[
+ {
+ "name": "abc",
+ "city" : "hyd"
+ },
+ {
+ "name": "xyz",
+ "city" : "delhi"
+ },
+ {
+ "name": "abc1",
+ "city" : "hyd"
+ }
+]
+
+expected output - 
+
+"abc,abc1"
+
+dataweave script -
+
+%dw 2.0
+output application/json
+
+---
+(payload filter ($.city == "hyd")).name joinBy ","
+
+
+************************* Filter Key & Values of Objects in Separate Array******************
+
+input payload :-
+
+{
+ "firstName": "EmpFirstName",
+ "lastName": "EmpLastName",
+ "address": "EmpAddress"
+}
+
+
+dataweave script :-
+
+%dw 2.0
+output application/json
+
+---
+{
+"keys" : keysOf(payload),
+"values" : valuesOf(payload),
+
+"keysUsingPluck" : payload pluck $$,
+"valueUsingPluck" : payload pluck $
+
+}
+
 
 
