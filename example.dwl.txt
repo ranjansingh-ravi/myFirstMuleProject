@@ -1,0 +1,549 @@
+*********************** Map Syntax ***********************************************
+
+%dw 2.0
+output application/json
+---
+["jose", "pedro", "mateo"] filter ($ != 'jose') map ((value, index) -> { (index) : value})
+
+
+*********************** MapObject : - ********************************************
+
+eg :- 1
+payload - 
+
+{
+    "name": "Mariano",
+    "lastname": "de Achaval",
+    "age": "37",
+    "gender": "male"
+  }
+ 
+DataWeave - 
+ 
+%dw 2.0
+output application/json
+---
+{
+"withoutDollar" : payload mapObject (value, key, index ) -> {
+    (if((key) ~= 'age') "AGE" : value
+     else (key) : value)
+},
+"WithDollar" : payload mapObject  {
+    (if(($$) ~= 'age') "AGE" : $
+     else ($$) : $)
+}
+
+}
+
+//value is $, Key is $$, index is $$$
+
+Output - 
+
+{
+  "withoutDollar": {
+    "name": "Mariano",
+    "lastname": "de Achaval",
+    "AGE": "37",
+    "gender": "male"
+  },
+  "WithDollar": {
+    "name": "Mariano",
+    "lastname": "de Achaval",
+    "AGE": "37",
+    "gender": "male"
+  }
+}
+
+************************** Function **********************************************
+
+
+Dataweave - 
+
+%dw 2.0
+output application/csv
+
+//fun verifyAge(age : Number) = if(age>40) "not eligible" else "eligible"
+fun verifyAge(age) = if(age>40) "not eligible" else "eligible"
+
+---
+
+  {
+    name: "Mariano",
+    lastname: "de Achaval",
+    age: verifyAge(37),
+    gender: "male"
+  }
+  
+output - 
+name,lastname,age,gender
+Mariano,de Achaval,eligible,male
+
+************************Using FilterObject with MapObject********************************
+
+%dw 2.0
+output application/json
+fun doublePrice(price) = price * 2
+
+var inputObject = {
+    "product1": {
+        "name": "Widget",
+        "quantity": 5,
+        "price": 10
+    },
+    "product2": {
+        "name": "Gadget",
+        "quantity": 0,
+        "price": 15
+    },
+    "product3": {
+        "name": "Doodad",
+        "quantity": 3,
+        "price": 8
+    }
+}
+
+var filteredAndMappedObject = inputObject 
+    // Filter out products with quantity > 0
+    filterObject((value, key) -> value.quantity > 0)
+    // Double the price of the remaining products
+    mapObject ((value, key) -> 
+        (key): {
+            "name": value.name,
+            "quantity": value.quantity,
+            "price": doublePrice(value.price)
+        }
+    )
+
+---
+filteredAndMappedObject
+
+
+Output --
+
+{
+  "product1": {
+    "name": "Widget",
+    "quantity": 5,
+    "price": 20
+  },
+  "product3": {
+    "name": "Doodad",
+    "quantity": 3,
+    "price": 16
+  }
+}
+
+*********************** Find Prime Number Using DataWeave **************************
+
+%dw 2.0
+output application/json  
+---
+if (((2 to payload.number - 1) map (payload.number mod $)) contains (0) == true)
+  payload.number ++ " : is prime"
+else
+  payload.number ++ " : is not prime"
+
+*********************** Using Filter, Map, FilterObject, MapObject Together ***************************************
+
+DataWeave--
+
+%dw 2.0
+output application/json
+
+var inputObject = [
+    {
+        "name": "Widget",
+        "quantity": 5,
+        "price": 10
+    },
+    {
+        "name": "Gadget",
+        "quantity": 0,
+        "price": 15
+    },
+    {
+        "name": "Doodad",
+        "quantity": 3,
+        "price": 8
+    }
+]
+---
+inputObject filter($.price >= 10) map (item, index)-> {
+    (item filterObject((value1, key1, index1)-> ((key1) startsWith  ('q') ) or ((key1) startsWith  ('p') ) ) 
+              mapObject ((value2, key2, index2) -> 
+                           (if(((key2) ~= 'quantity')) "Stock" : value2
+                               else (key2) : value2))
+     )
+}
+
+
+--------Output
+
+[
+  {
+    "Stock": 5,
+    "price": 10
+  },
+  {
+    "Stock": 0,
+    "price": 15
+  }
+]
+
+
+***************Example of upper, lower, now(), replace with, substring, distinctBy, splitBy, splitAt, splitWhere, partition *******************
+
+DataWeave---
+
+%dw 2.0
+import * from dw::core::Strings
+import * from dw::core::Arrays
+output application/json
+
+var inputString = "Hello, World!"
+
+
+var inputString2 = ["Hello","World!"]
+
+var numbers = [2, 3, 5, 3, 8, 9, 4]
+
+
+---
+{
+  "upperCase": upper(inputString),
+  "lowerCase": lower(inputString),
+   "CurrentTime" : now(),
+   "year" : now().year,
+   "CurrentTimeInMilliSeconds" : now().milliseconds,
+
+   "replacedString": inputString replace("World") with ("DataWeave"),
+
+   "substringExample":  substring(inputString, 1, 5),
+    
+    "distinctNumbers": numbers distinctBy $,
+    //"distinctNumbers": numbers distinctBy ((item) -> item),
+
+   "splitByComma": splitBy(inputString, ","),
+   "splitAtExample": inputString2 splitAt(1),
+   "splitWhereExample" : numbers splitWhere ((item) -> item >  5),
+       //this splits at the point where condition is met for the first time
+       "Partition" : numbers partition((item) -> isEven(item) )
+
+}
+
+
+-----Output 
+{
+  "upperCase": "HELLO, WORLD!",
+  "lowerCase": "hello, world!",
+  "CurrentTime": "2023-09-28T09:10:30.27772Z",
+  "year": 2023,
+  "CurrentTimeInMilliSeconds": 277,
+  "replacedString": "Hello, DataWeave!",
+  "substringExample": "ello",
+  "distinctNumbers": [
+    2,
+    3,
+    5,
+    8,
+    9,
+    4
+  ],
+  "splitByComma": [
+    "Hello",
+    " World!"
+  ],
+  "splitAtExample": {
+    "l": [
+      "Hello"
+    ],
+    "r": [
+      "World!"
+    ]
+  },
+  "splitWhereExample": {
+    "l": [
+      2,
+      3,
+      5,
+      3
+    ],
+    "r": [
+      8,
+      9,
+      4
+    ]
+  },
+  "Partition": {
+    "success": [
+      2,
+      8,
+      4
+    ],
+    "failure": [
+      3,
+      5,
+      3,
+      9
+    ]
+  }
+}
+
+*********************** Get payload out of scatter gather ****************************************
+
+pluck(payload, (value, key, index) -> {
+      "payload" : value.payload
+}
+)
+
+*********************** sum all the number in an array ********************************************
+
+[1,2,3,4,5,6,76,8,65] reduce($+$$) or payload reduce($+$$) or sum(payload)
+
+
+*********************** add an id and increment it by one****************************************
+
+["jose", "pedro", "mateo"]  map (()-> 
+{
+    'id' : $$ + 100 ,
+    'name' : $
+}
+)
+
+
+********************* Filter odd even ******************************************
+
+[0,1,2,3,4,5,6,7,8,9]
+
+
+
+***************** interchange key and value ************************************
+
+input payload - 
+
+[
+ {
+ "message1":"Hello World"
+ },
+ {
+ "message2":"Hello Shubham"
+ }
+]
+
+dataweave script - Inside medium bracket map function expects key value pair, so we cant directly use teh mapobject. We can either keep it
+outside the medium bracket or put the whole mapobject inside a small bracket
+
+option 1 :- inside medium bracket and inside small bracket
+
+payload map ((item, value) -> {
+   ( item mapObject(v,k,i) -> {
+     (v):k
+    })
+})
+
+option 2 :- outside medium bracket in map
+
+payload map ((item, value) -> item mapObject(v,k,i) -> {
+    (v) : k
+}
+)
+
+
+************************** reverse the string of sentence *******************************
+
+input payload - 
+
+{
+ "Reverse": "Dataweave 2.0 is Cool"
+}
+
+
+dataweave script -
+
+(payload.Reverse splitBy " ") [-1 to 0] joinBy " " 
+
+
+***************************Print Last x characters of a number or String **********************
+
+need to import last or first from String module
+
+inoput payload -
+
+[
+ {
+ "num":"000147"
+ },
+ {
+ "num":"100297"
+ },
+]
+
+dataweave script -
+
+import last from dw::core::Strings
+ - -
+payload map(v,k)-> (num: v.num last 3)
+
+
+
+************************** count alphabets in the strings **********************************
+
+input payload -
+
+{
+ "string":"12shubham245fc"
+}
+
+dataweave script - countCharactersBy counts the characters based on string and condition, the condition here is isAlpha($) which check if the 
+character is an alphabet
+
+import countCharactersBy, isAlpha from dw::core::Strings
+ - -
+payload.string countCharactersBy isAlpha($)
+
+
+
+********************* Find Number of Object or Key-Value Pairs in an Array********************
+
+input paylod - 
+
+[{
+ "k1":"v1"
+},
+{
+ "k2":"v2"
+}
+]
+
+dataweave script - 
+
+sizeOf(payload)
+
+
+********************* Generate Random Numbers********************
+range is taken in small brackets like (1 to payload[0])
+
+input paylod - 
+[10]
+
+dataweave script - 
+
+(1 to payload[0]) map randomInt(100)
+
+output - random numbers
+
+[89,26,21,77,80,31,24,13,54,55]
+
+
+******************** Splt object into key value pairs in an array **************
+
+
+input paylod - 
+
+["a:b","c:d"]
+
+dataweave script - 
+
+payload map (() -> (($ splitBy ":")[0]) : ($ splitBy ":")[1])
+
+ouput - 
+
+[
+  {
+    "a": "b"
+  },
+  {
+    "c": "d"
+  }
+]
+
+*************************** Output the Following Pattern****************
+
+input paylod - 
+
+{
+ "number": "1034101910291333"
+}
+
+expected output -
+
+[
+ "1034",
+ "10341019",
+ "103410191029",
+ "1034101910291333"
+]
+
+dataweave script - 
+
+%dw 2.0
+output application/json
+
+var l = sizeOf(payload.number)/4
+---
+
+((0 to l) map payload.number[0 to 4*($+1) -1]) filter $ != null
+
+
+
+******************* Filter based on field value and form a String **********************
+
+
+input payload - 
+
+[
+ {
+ "name": "abc",
+ "city" : "hyd"
+ },
+ {
+ "name": "xyz",
+ "city" : "delhi"
+ },
+ {
+ "name": "abc1",
+ "city" : "hyd"
+ }
+]
+
+expected output - 
+
+"abc,abc1"
+
+dataweave script -
+
+%dw 2.0
+output application/json
+
+---
+(payload filter ($.city == "hyd")).name joinBy ","
+
+
+************************* Filter Key & Values of Objects in Separate Array******************
+
+input payload :-
+
+{
+ "firstName": "EmpFirstName",
+ "lastName": "EmpLastName",
+ "address": "EmpAddress"
+}
+
+
+dataweave script :-
+
+%dw 2.0
+output application/json
+
+---
+{
+"keys" : keysOf(payload),
+"values" : valuesOf(payload),
+
+"keysUsingPluck" : payload pluck $$,
+"valueUsingPluck" : payload pluck $
+
+}
+
+
+

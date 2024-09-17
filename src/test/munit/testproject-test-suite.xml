@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="testproject-test-suite.xml" />
+	<munit:test name="testproject-test-suite-testprojectFlowTest" doc:id="2571c6bf-b9dc-4b01-8ed5-52086bd9ece3" description="Test">
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="55c496cf-21f4-4ce2-bc8d-d841d4d0f10e" >
+				<munit:attributes value="#[{&#10;	queryParams : {num1 : 15 , num2 : 20},&#10;	uriParams  : {policyNumber: '12345'},&#10;	headers : {client_id : '12345', client_secret : 'jcvuvuutwejk1279'}&#10;}]" />
+			</munit:set-event>
+			<flow-ref doc:name="Flow-ref to testprojectFlow" doc:id="2963f66d-3d66-4b4a-8f84-fa8740d0730c" name="testprojectFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="Assert equals" doc:id="5a5321f0-372f-4e09-80a2-ad5d58281123" actual="#[payload.result]" expected="#[35]" message="Response is not 35"/>
+			<munit-tools:assert-that doc:name="Assert that" doc:id="30649a64-cf3f-471a-81b8-ac1db4c064c3" expression="#[payload.result]" is="#[MunitTools::notNullValue()]"/>
+			<munit-tools:assert doc:name="Assert expression" doc:id="c5f388d3-5666-40ef-83c9-c200f9e015eb" />
+		</munit:validation>
+	</munit:test>
+
+
+</mule>
